@@ -7,7 +7,9 @@ enum {
     STATE_5     //5
 };
 
-char state;
+char state, caracter, administrador;
+String nome,senha; 
+int i;
 
 // obtem o número(ponto) da máquina de estado
 char getState(void) {
@@ -17,6 +19,7 @@ char getState(void) {
 // é usado para setar o número(ponto) da máquina de estado
 void setState(char newState) {
     state = newState;
+    i = 0;
 }
 
 void setup() {
@@ -25,19 +28,23 @@ void setup() {
   pinMode(3,OUTPUT);
   
   Serial.begin(9600);
-
+  Serial.setTimeout(50);
   state = 0;
 }
 
 void loop() {
   switch (getState()) 
     {      
-      case STATE_MENU: 
-        Serial.println("1 - Cadastro do usuario:");
-        Serial.println("2 - Listagem dos nomes dos usuarios cadastrados;");
-        Serial.println("4 - Liberacao da porta 1:");
-        Serial.println("5 - Liberacao da porta 2:");
-
+      case STATE_MENU:
+        if(i == 0) { 
+          Serial.println("Selecione uma opcao abaixo");
+          Serial.println("1 - Cadastro do usuario:");
+          Serial.println("2 - Listagem dos nomes dos usuarios cadastrados;");
+          Serial.println("3 - Liberacao dos eventos:");
+          Serial.println("4 - Liberacao da porta 1:");
+          Serial.println("5 - Liberacao da porta 2:");
+          i++;
+        }
         //Verifica se chegou informação na Serial
         if(Serial.available() > 0) {
           switch(Serial.read() - 48) {
@@ -56,11 +63,35 @@ void loop() {
             case 5:
               setState(STATE_5);    
             break;
-        }
+          }
         }
       break;
-      case STATE_1:   
-        Serial.println("Estado 1!");        
+      case STATE_1: //Cadastro do usuário  
+        //Serial.println("Estado 1!");
+        if(i == 0){
+          Serial.print("Nome:");
+          i = 1;
+        }
+        if(Serial.available() > 0) {
+          i++;
+          if(i == 2) {
+            nome = Serial.readString();
+            Serial.println(nome);
+            Serial.print("Senha:");
+          }
+          else if(i == 3) {
+            senha = Serial.readString();
+            Serial.println(senha);
+            Serial.print("Administrador(Sim - S ou Nao - N):");
+          }
+          else if(i == 4) {
+            administrador = Serial.read();
+            Serial.println(administrador);
+            Serial.println("Usuario Cadastrado!");
+            setState(STATE_MENU);
+          }
+        }
+        //Serial.println("Saiu!");                   
       break;
       case STATE_2:   
         Serial.println("Estado 2!");          
