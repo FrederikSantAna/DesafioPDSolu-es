@@ -7,9 +7,14 @@ enum {
     STATE_5     //5
 };
 
-char state, caracter, administrador;
-String nome,senha; 
-int i;
+struct Usuario {
+  String nome,senha; 
+  char administrador; 
+};
+
+struct Usuario usuario[10];
+char state;
+int i, cadastroAtual, j;
 
 // obtem o número(ponto) da máquina de estado
 char getState(void) {
@@ -30,6 +35,7 @@ void setup() {
   Serial.begin(9600);
   Serial.setTimeout(50);
   state = 0;
+  cadastroAtual = 0;
 }
 
 void loop() {
@@ -67,7 +73,6 @@ void loop() {
         }
       break;
       case STATE_1: //Cadastro do usuário  
-        //Serial.println("Estado 1!");
         if(i == 0){
           Serial.print("Nome:");
           i = 1;
@@ -75,26 +80,39 @@ void loop() {
         if(Serial.available() > 0) {
           i++;
           if(i == 2) {
-            nome = Serial.readString();
-            Serial.println(nome);
+            usuario[cadastroAtual].nome = Serial.readString();
+            Serial.println(usuario[cadastroAtual].nome);
             Serial.print("Senha:");
           }
           else if(i == 3) {
-            senha = Serial.readString();
-            Serial.println(senha);
+            usuario[cadastroAtual].senha = Serial.readString();
+            Serial.println(usuario[cadastroAtual].senha);
             Serial.print("Administrador(Sim - S ou Nao - N):");
           }
           else if(i == 4) {
-            administrador = Serial.read();
-            Serial.println(administrador);
+            usuario[cadastroAtual].administrador = Serial.read();
+            Serial.println(usuario[cadastroAtual].administrador);
             Serial.println("Usuario Cadastrado!");
+            cadastroAtual++;
             setState(STATE_MENU);
           }
         }
         //Serial.println("Saiu!");                   
       break;
-      case STATE_2:   
-        Serial.println("Estado 2!");          
+      case STATE_2: 
+        if(i == 0) {
+          Serial.println("Usuarios Cadastrados:");  
+          for(j = 0; j < 10; j++) {  
+            Serial.println(usuario[j].nome);     
+          }
+          Serial.println("Digite ""Voltar"" para retornar ao Menu");
+          i = 1;
+        }
+        if(Serial.available() > 0) {
+            if(Serial.readString() == "Voltar") {
+             setState(STATE_MENU);     
+            }
+        }
       break;
       case STATE_3:   
         Serial.println("Estado 3!");          
