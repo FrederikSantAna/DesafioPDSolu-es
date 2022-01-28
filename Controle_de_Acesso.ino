@@ -14,9 +14,11 @@ struct Usuario {
 
 struct Usuario usuario[10];
 char state;
-int i, cadastroAtual, j, usuarioAtual;
+int i, cadastroAtual, j, usuarioAtual, ativaTempo = 0, buttonState = 0;
 String dadoAtual;
-bool validacaoAcesso;
+bool validacaoAcesso, contagemTempo, validacaoAdm;
+unsigned long previousMillis = 0;
+unsigned long currentMillis;
 
 // obtem o número(ponto) da máquina de estado
 char getState(void) {
@@ -28,6 +30,8 @@ void setState(char newState) {
     state = newState;
     i = 0;
     validacaoAcesso = false;
+    contagemTempo = false;
+    validacaoAdm = false;
 }
 
 void setup() {
@@ -43,9 +47,12 @@ void setup() {
   cadastroAtual = 0;
   usuarioAtual = 0;
   validacaoAcesso = false;
+  contagemTempo = false;
+  validacaoAdm = false;
 }
 
 void loop() {
+  currentMillis = millis();
   switch (getState()) 
     {      
       case STATE_MENU:
@@ -146,14 +153,22 @@ void loop() {
             dadoAtual = Serial.readString();
             if(dadoAtual == usuario[usuarioAtual].senha) {
               Serial.println(dadoAtual); 
-              Serial.println("Senha Correta!");             
+              Serial.println("Senha Correta!"); 
+              validacaoAdm = true;            
             }
             else {
               Serial.println(dadoAtual);
               Serial.println("Senha Incorreta,Tente Novamente!");
               Serial.print("Senha:");
             }
+          if(validacaoAcesso && (usuario[usuarioAtual].administrador == 'S')) {
+            
           }
+          else {
+            Serial.println("Esse usuario nao tem permissao!");
+            setState(STATE_MENU); 
+          }
+        }
       break;
       case STATE_4: //Liberação da porta 1    
         if(i == 0){
@@ -181,18 +196,63 @@ void loop() {
             if(dadoAtual == usuario[usuarioAtual].senha) {
               Serial.println(dadoAtual); 
               Serial.println("Senha Correta!");
-              digitalWrite(2, HIGH);
-              setState(STATE_MENU);             
+              digitalWrite(2, HIGH); 
+              contagemTempo = true; 
+              previousMillis = currentMillis;        
             }
             else {
               Serial.println(dadoAtual);
               Serial.println("Senha Incorreta,Tente Novamente!");
               Serial.print("Senha:");
             }
-          }          
+        } 
+        buttonState = digitalRead(4);
+        if ((buttonState == HIGH || (currentMillis == previousMillis + 5000)) && contagemTempo) {
+          digitalWrite(2, LOW);
+          setState(STATE_MENU); 
+        }         
       break;
-      case STATE_5:   
-        Serial.println("Estado 5!");          
+      case STATE_5: //Liberação da porta 2   
+        if(i == 0){
+          Serial.print("Nome:");
+          i = 1;
+        }
+        if(Serial.available() > 0 && !validacaoAcesso) {
+          dadoAtual = Serial.readString();
+          for(j = 0; j < 10; j++) {
+            if(dadoAtual == usuario[j].nome) {
+              usuarioAtual = j;
+              validacaoAcesso = true;
+              Serial.println(dadoAtual); 
+              Serial.print("Senha:");
+            }
+          }
+          if(!validacaoAcesso) {
+            Serial.println(dadoAtual); 
+            Serial.println("Usuario nao encontrado!"); 
+            i = 0;
+          }
+        }
+        if(Serial.available() > 0 && validacaoAcesso) {
+            dadoAtual = Serial.readString();
+            if(dadoAtual == usuario[usuarioAtual].senha) {
+              Serial.println(dadoAtual); 
+              Serial.println("Senha Correta!");
+              digitalWrite(3, HIGH); 
+              contagemTempo = true; 
+              previousMillis = currentMillis;        
+            }
+            else {
+              Serial.println(dadoAtual);
+              Serial.println("Senha Incorreta,Tente Novamente!");
+              Serial.print("Senha:");
+            }
+        } 
+        buttonState = digitalRead(5);
+        if ((buttonState == HIGH || (currentMillis == previousMillis + 5000)) && contagemTempo) {
+          digitalWrite(3, LOW);
+          setState(STATE_MENU); 
+        }          
       break;
     }
 }
