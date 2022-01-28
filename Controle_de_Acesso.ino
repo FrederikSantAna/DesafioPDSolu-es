@@ -14,7 +14,9 @@ struct Usuario {
 
 struct Usuario usuario[10];
 char state;
-int i, cadastroAtual, j;
+int i, cadastroAtual, j, usuarioAtual;
+String dadoAtual;
+bool validacaoAcesso;
 
 // obtem o número(ponto) da máquina de estado
 char getState(void) {
@@ -25,17 +27,22 @@ char getState(void) {
 void setState(char newState) {
     state = newState;
     i = 0;
+    validacaoAcesso = false;
 }
 
 void setup() {
   //Definindo duas saídas
   pinMode(2,OUTPUT);
   pinMode(3,OUTPUT);
+  pinMode(4,INPUT);
+  pinMode(5,INPUT);
   
   Serial.begin(9600);
   Serial.setTimeout(50);
   state = 0;
   cadastroAtual = 0;
+  usuarioAtual = 0;
+  validacaoAcesso = false;
 }
 
 void loop() {
@@ -46,10 +53,10 @@ void loop() {
           Serial.println("Selecione uma opcao abaixo");
           Serial.println("1 - Cadastro do usuario:");
           Serial.println("2 - Listagem dos nomes dos usuarios cadastrados;");
-          Serial.println("3 - Liberacao dos eventos:");
+          Serial.println("3 - Listagem dos eventos:");
           Serial.println("4 - Liberacao da porta 1:");
           Serial.println("5 - Liberacao da porta 2:");
-          i++;
+          i = 1;
         }
         //Verifica se chegou informação na Serial
         if(Serial.available() > 0) {
@@ -99,13 +106,13 @@ void loop() {
         }
         //Serial.println("Saiu!");                   
       break;
-      case STATE_2: 
+      case STATE_2: //Listagem dos nomes dos usuários cadastrados
         if(i == 0) {
           Serial.println("Usuarios Cadastrados:");  
           for(j = 0; j < 10; j++) {  
             Serial.println(usuario[j].nome);     
           }
-          Serial.println("Digite ""Voltar"" para retornar ao Menu");
+          Serial.println("Digite \"Voltar\" para retornar ao Menu");
           i = 1;
         }
         if(Serial.available() > 0) {
@@ -114,11 +121,75 @@ void loop() {
             }
         }
       break;
-      case STATE_3:   
-        Serial.println("Estado 3!");          
+      case STATE_3: //Listagem dos eventos   
+        if(i == 0){
+          Serial.print("Nome:");
+          i = 1;
+        }
+        if(Serial.available() > 0 && !validacaoAcesso) {
+          dadoAtual = Serial.readString();
+          for(j = 0; j < 10; j++) {
+            if(dadoAtual == usuario[j].nome) {
+              usuarioAtual = j;
+              validacaoAcesso = true;
+              Serial.println(dadoAtual); 
+              Serial.print("Senha:");
+            }
+          }
+          if(!validacaoAcesso) {
+            Serial.println(dadoAtual); 
+            Serial.println("Usuario nao encontrado!"); 
+            i = 0;
+          }
+        }
+        if(Serial.available() > 0 && validacaoAcesso) {
+            dadoAtual = Serial.readString();
+            if(dadoAtual == usuario[usuarioAtual].senha) {
+              Serial.println(dadoAtual); 
+              Serial.println("Senha Correta!");             
+            }
+            else {
+              Serial.println(dadoAtual);
+              Serial.println("Senha Incorreta,Tente Novamente!");
+              Serial.print("Senha:");
+            }
+          }
       break;
-      case STATE_4:   
-        Serial.println("Estado 4!");          
+      case STATE_4: //Liberação da porta 1    
+        if(i == 0){
+          Serial.print("Nome:");
+          i = 1;
+        }
+        if(Serial.available() > 0 && !validacaoAcesso) {
+          dadoAtual = Serial.readString();
+          for(j = 0; j < 10; j++) {
+            if(dadoAtual == usuario[j].nome) {
+              usuarioAtual = j;
+              validacaoAcesso = true;
+              Serial.println(dadoAtual); 
+              Serial.print("Senha:");
+            }
+          }
+          if(!validacaoAcesso) {
+            Serial.println(dadoAtual); 
+            Serial.println("Usuario nao encontrado!"); 
+            i = 0;
+          }
+        }
+        if(Serial.available() > 0 && validacaoAcesso) {
+            dadoAtual = Serial.readString();
+            if(dadoAtual == usuario[usuarioAtual].senha) {
+              Serial.println(dadoAtual); 
+              Serial.println("Senha Correta!");
+              digitalWrite(2, HIGH);
+              setState(STATE_MENU);             
+            }
+            else {
+              Serial.println(dadoAtual);
+              Serial.println("Senha Incorreta,Tente Novamente!");
+              Serial.print("Senha:");
+            }
+          }          
       break;
       case STATE_5:   
         Serial.println("Estado 5!");          
